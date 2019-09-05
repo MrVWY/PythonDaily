@@ -1,0 +1,441 @@
+1、开发模式
+    -普通开发方式 （前后端放在一起写  webDjango）
+    -前后端分离
+2、后端开发
+    为前端提供URL（API/接口的开发）
+    注：永远返回HttpResponse
+3、 Django  FBV CBV
+    FBV  function base views
+    CBV  class base views
+        -dispath() :http_method_names = ['get', 'post', 'put', 'patch', 'delete', 'head', 'options', 'trace']
+        基于反射实现根据请求方式不同 执行不同的方法
+        原理：
+            a、路由
+                url-> view方法 ->dispath方法（反射执行其他方法：http_method_names）
+    面试题：
+         FBV：
+        from django.views.decorators.csrf import csrf_exempt,csrf_protect..........
+        django为用户实现防止跨站请求伪造的功能，通过中间件 django.middleware.csrf.CsrfViewMiddleware 来完成。而对于django中设置防跨站请求伪造功能有分为全局和局部。
+        全局：
+            中间件 django.middleware.csrf.CsrfViewMiddleware
+        局部：
+            @csrf_protect，为当前函数强制设置防跨站请求伪造功能，即便settings中没有设置全局中间件。
+            @csrf_exempt，取消当前函数防跨站请求伪造功能，即便settings中设置了全局中间件。用装饰器
+            注：from django.views.decorators.csrf import csrf_exempt,csrf_protect
+
+        CBV：
+            from django.utils.decorators import method_decorator
+            1、class find():
+                @method_decorator(csrf_exempt)
+                def dispatch(self,request,*args,**kwargs)
+                    return super(find,self).dispath(request,*args,**kwargs)
+            2、
+            @method_decorator(csrf_exempt,name="dispatch)
+            class find():
+                def dispath(self,request,*args,**kwargs)
+                    return super(find,self).dispath(request,*args,**kwargs)
+
+4、面向对象
+    -封装
+        -对同一类方法封装到类中
+            class file ：
+                文件操作
+            class database：
+                数据库操作
+        -将数据封装到对象中
+             class file ：
+                 def __init__(self,a1,a2):
+                    self.a1 = a1
+              obj = file(123,23)
+
+5、restful 规范
+    a.根据method的不同做不同的操作
+        10规则  理解说
+
+6、rest_frameworkren认证（必须熟悉流程）
+    CBV模式继承与APIView  先运行dispatch方法
+    CBV流程 路由url -- > view函数 --> dispatch方法
+    源码里面
+        dispatch 会加工原生的request,丰富了request的一些功能
+        request(原生request,[BasicAuthentication对象,])
+        request = self.initialize_request(request,*args,**kwargs)
+        获取原生request,request._request
+
+        获取认证类的对象 request.authenticators
+        from rest_framework.views import APIView
+        from rest_framework import exceptions
+        class MyAuthentication(object):
+            def authenticate(self,request):
+                token = request._request.GET.get('token')
+                if not token:
+                    raise  exceptions.AuthenticationFailed('用户认证失败')
+                return ('Hello',None)
+
+            def authenticate_header(self,val):
+                pass
+        class dogview(APIView):
+            authentication_classes = [MyAuthentication,]
+
+            def get(self,request,*args,**kwargs):
+              #self.dispatch()
+               print(request)
+               req ={
+                   'code':1000,
+                   'msg':'ZJL'
+               }
+               return HttpResponse(json.dumps(req),status=201)
+
+            def post(self, request, *args, **kwargs):
+                return HttpResponse('创建')
+
+            def put(self, request, *args, **kwargs):
+                return HttpResponse('更新')
+
+            def delete(self, request, *args, **kwargs):
+                return HttpResponse('删除')
+
+7、rest_framework
+    def initial(self, request, *args, **kwargs):
+        """
+        Runs anything that needs to occur prior to calling the method handler.
+        """
+        self.format_kwarg = self.get_format_suffix(**kwargs)
+
+        # Perform content negotiation and store the accepted info on the request
+        neg = self.perform_content_negotiation(request)
+        request.accepted_renderer, request.accepted_media_type = neg
+
+        # Determine the API version, if versioning is in use.
+        实现版本
+        version, scheme = self.determine_version(request, *args, **kwargs)
+        request.version, request.versioning_scheme = version, scheme
+
+        # Ensure that the incoming request is permitted
+        实现认证
+        self.perform_authentication(request)
+        实现权限
+        self.check_permissions(request)
+        实现控制访问频率
+        self.check_throttles(request)
+
+8、认证类
+有些API需要登陆才能访问；有些API则不需要
+    REST_FRAMEWORK= {
+            'DEFAULT_AUTHENTICATION_CLASSES' : ['a.Authentication.Auth.MyAuthentication',],
+            'DEFAULT_PERMISSION_CLASSES':['a.Authentication.orderview_permission.Mypermission'],
+            'DEFAULT_THROTTLE_CLASSES':['a.Authentication.throttling.Visit_control'],
+            'DEFAULT_THROTTLE_RATES':{
+                'ZJL':'3/m'
+            }
+    }
+    a.认证流程  见认证流程.jpg
+    b.setting.py 设置
+    源码：
+        authentication_classes = api_settings.DEFAULT_AUTHENTICATION_CLASSES
+
+        api_settings = APISettings(None, DEFAULTS, IMPORT_STRINGS)
+
+        def reload_api_settings(*args, **kwargs):
+            setting = kwargs['setting']
+            if setting == 'REST_FRAMEWORK':
+                api_settings.reload()
+    设置： (a\Authentication包下的MyAuthentication类)
+        REST_FRAMEWORK= {
+            'DEFAULT_AUTHENTICATION_CLASSES' : ['a.Authentication.MyAuthentication',]
+        }
+        如果有些类不存在就在类里面加上 authentication_classes = []
+
+    c. 权限认证 必须继承BasePermission
+        from rest_framework.permissions import BasePermission
+        permission_classes = [TestPermission, ]
+    d.内置基本的用户认证 必须继承BaseAuthentication
+        from rest_framework import exceptions
+        from rest_framework.authentication import  BaseAuthentication
+        class BasicAuthentication(BaseAuthentication)
+        class SessionAuthentication(BaseAuthentication)
+        class TokenAuthentication(BaseAuthentication)
+        class RemoteUserAuthentication(BaseAuthentication)
+        梳理：
+            1、使用
+                -创建类：继承BaseAuthentication 实现：authenticate 方法
+                -返回值
+                    -{元素1，元素2} 1赋给request.user 2赋给request.auth
+    e. 频率控制   from rest_framework.throttling import BaseThrottle
+    class SimpleRateThrottle(BaseThrottle)
+    class AnonRateThrottle(SimpleRateThrottle)
+    class UserRateThrottle(SimpleRateThrottle)
+    class ScopedRateThrottle(SimpleRateThrottle)
+    throttle_classes = []
+        import time
+        from rest_framework.throttling import BaseThrottle,SimpleRateThrottle
+        Visit_Recording = {}
+        class Visit_control(BaseThrottle):
+            ''' 60秒 3次'''
+            def __init__(self):
+                self.history = None
+
+            def allow_request(self,request,view):
+                #remote_addr = request.META.get('REMOTE_ADDR')
+                remote_addr = self.get_ident(request)
+                ctime = time.time()
+                if remote_addr not in Visit_Recording:
+                    Visit_Recording[remote_addr] = [ctime,]
+                    return True
+                history = Visit_Recording.get(remote_addr)
+                self.history = history
+                while history and history[-1] < ctime-60:
+                    history.pop()
+                if len(history) < 3 :
+                    history.insert(0,ctime)
+                    return True
+
+            def wait(self):
+                ctime = time.time()
+                return  60-(ctime-self.history[-1])
+
+        class VisitThrottle(SimpleRateThrottle):
+            scope = 'ZJL'
+
+            def get_cache_key(self, request, view):
+                return self.get_ident(request)
+
+9、版本
+    from rest_framework.request import Request
+    request.query_params.get() 相当于 requery._requery.GET.get()
+    from rest_framework.versioning import  QueryParameterVersioning
+      versioning_class = QueryParameterVersioning
+      versioning_class = URLPathVersioning  要配置setting.py文件 DEFAULT_VERSIONING_CLASS = 'rest_framework.versioning.URLPathVersion'
+         DEFAULT_VERSION ALLOWED_VERSIONS  VERSION_PARAM
+        -1
+        class ParamVersion(object):
+            def determine_version(self,request,*args,**kwargs):
+                version = request.query_params.get('version')
+                return version
+
+        class Version(APIView):
+            versioning_class = ParamVersion
+            def get(self,request,*args,**kwargs):
+                #version = request._request.GET.get('verison')
+                #print(version)
+                # version = request.query_params.get('version')
+                # print(version)
+                return HttpResponse('OK')
+        -2
+        反向生成URL (rest_framework)
+        u1 = request.versioning_scheme.reverse(viewname='uu',request=request)
+            or
+         from django.urls import reverse
+        u2 = reverse(viewname='uu',kwargs={'version':1})
+
+10、解析器
+    -1、django : request.POST / request.body
+        -请求头：如果请求头中的Content-Type : application/x-www-form-urlencoded  request.POST中才有值（去request.body解析数据）
+        -数据格式要求:
+            name=123&age=13&gender=nam
+    -2、from rest_framework.parse import JsonParser,FormParser  （可以配置全局）
+    JsonParser ： 解析content-type:application/json的请求头
+    FormParser :  解析content-type:application/x-www-form-urlencoded 的请求头
+    -使用
+    parser_class = [JsonParser,]
+    -3 请求头
+       状态码
+       请求方法
+    -4 dispath : request 封装
+        request.data
+11、序列化
+    -请求数据进行检验
+    -QureySet进行序列化
+
+    from rest_framework import serializers
+
+    class RolesSerializer(serializers.Serializer):
+        ID = serializers.IntegerField(source='id')
+        position = serializers.CharField()
+
+    class RoleView(APIView):
+        versioning_class = URLPathVersioning
+        authentication_classes = []
+        permission_classes = []
+        def get(self,request,*args,**kwargs):
+            roles = models.Role.objects.all()
+            ser = RolesSerializer(instance=roles,many=True)
+            ret = json.dumps(ser.data,ensure_ascii=False)
+            return  HttpResponse(ret)
+
+    class Myfield(serializers.CharField):
+
+        def to_representation(self,value):
+            print(value)
+            return 'AAAAAAAA'
+
+    class UserSerializer(serializers.Serializer):
+        UT = serializers.IntegerField(source='user_type')
+        UTN = serializers.CharField(source='get_user_type_display')
+        gp = serializers.CharField(source = 'group.type')
+
+        X  = Myfield(source='username')
+
+        password = serializers.IntegerField()
+        #r_list = serializers.CharField(source='roles.all')
+        rlist = serializers.SerializerMethodField() # 自定义显示
+        def get_rlist(self,row):
+            role_list = row.roles.all()
+            ret = []
+            for item in role_list:
+                ret.append( {'id':item.id,'title':item.position})
+            return ret
+
+    class UserInfo_2_serializers(serializers.ModelSerializer):
+        X = serializers.CharField(source='get_user_type_display')
+        rls = serializers.SerializerMethodField()
+
+        class Meta:
+            model = models.UserInfo
+            field = ['id','username','password','X','rls','group']
+            #extra_kwargs = {'group':{'source':'group.type'},}
+            depth = 1 #0-10 深度化
+
+        def get_rlist(self,row):
+            role_list = row.roles.all()
+            ret = []
+            for item in role_list:
+                ret.append( {'id':item.id,'title':item.position})
+            return ret
+
+    class UserInfoView(APIView):
+        versioning_class = URLPathVersioning
+        authentication_classes = []
+        permission_classes = []
+        def get(self,request,*args,**kwargs):
+            roles = models.UserInfo.objects.all()
+            ser = UserSerializer(instance=roles,many=True)
+            ret = json.dumps(ser.data,ensure_ascii=False)
+            return  HttpResponse(ret)
+
+    -生成链接
+        path('group/$',views.UserInfo_2_view.as_view()),
+        re_path('group/(?P<pl>\d+)',views.GroupView.as_view(),name='gp'),
+        #hypermedialink
+        class UserInfo_2_serializers(serializers.ModelSerializer):
+            group = serializers.HyperlinkedIdentityField(view_name='gp',lookup_field='group_id',lookup_url_kwarg='pl')
+            # lookup_field:根据表指定字段
+            class Meta:
+            # 指定一个Model，自动检测序列化的字段
+                model = models.UserInfo
+                fields = ['id','username','password','group']
+                #extra_kwargs = {'group':{'source':'group.type'},}
+                depth = 0 #0-10之间
+
+        class UserInfo_Serializers(serializers.Serializer):
+              name = serializers.CharField(error_messages={'required':'不能为空'},validators=[])
+
+        class UserInfo_2_view(APIView):
+            authentication_classes = []
+            permission_classes = []
+            def get(self, request, *args, **kwargs):
+                roles = models.UserInfo.objects.all()
+                """
+                many=True 接下来执行ListSerializer对象的构造方法
+                many=False 接下来执行UserInfo_2_serializers对象的构造方法
+                """
+                ser = UserInfo_2_serializers(instance=roles, many=True,context={'request':request})
+                #调用对象的data属性
+                ret = json.dumps(ser.data, ensure_ascii=False)
+                return HttpResponse(ret)
+                def post(self, request, *args, **kwargs):
+                    ser = UserInfo_Serializers(data=request.data)
+                    if ser.is_valid():  这里有个钩子 找函数
+                        print(ser.validated_data['name'])
+                    else:
+                        print(ser.errors)
+
+        return HttpResponse('LLLLL')
+
+        class Groupserializers(serializers.ModelSerializer):
+            class Meta:
+                model = models.Usergroup
+                fields = "__all__"
+
+        class GroupView(APIView):
+            authentication_classes = []
+            permission_classes = []
+            def get(self,request,*args,**kwargs):
+                pk = kwargs.get('pl')
+                print(pk)
+                obj = models.Usergroup.objects.filter(pk=pk).first()
+                print(obj)
+                ser = Groupserializers(instance=obj,many=False)
+                ret = json.dumps(ser.data,ensure_ascii=False)
+                return HttpResponse(ret)
+
+    -源码
+        serializers.CharField  ->Field ->get_arrtibute()  self.source.attrs -> self.source.split('.')
+        ModelSerializer  -> instance
+
+    -请求数据校验（is_valid）
+          def post(self, request, *args, **kwargs):
+            ser = UserInfo_Serializers(data=request.data)
+            if ser.is_valid():
+                print(ser.validated_data['name'])
+            else:
+                print(ser.errors)
+12、分页
+    -进源码 看配置
+        from rest_framework.pagination import  PageNumberPagination #分页1、
+        from rest_framework.pagination import LimitOffsetPagination #分页2 在n个位置，向后查看n条数据
+        from rest_framework.pagination import CursorPagination  #加密分页
+    -实例
+        class Pageserializers(serializers.ModelSerializer):
+            class Meta:
+                model = models.Role
+                fields = "__all__"
+
+        class CustomPage(PageNumberPagination):
+            page_size = 2
+            page_size_query_param = 'size'
+            max_page_size = 3
+            page_query_param = 'page'
+
+        class PageView(APIView):
+             authentication_classes = []
+             permission_classes = []
+             def get(self,request,*args,**kwargs):
+                 #获取所有数据
+                 roles = models.Role.objects.all()
+                 #创建分页对象
+                 sg = CustomPage()
+                 #在数据库获取分页的数据
+                 pager_roles = sg.paginate_queryset(queryset=roles,request=request,view=self)
+                 print(pager_roles)
+                 #对分页数据序列化
+                 ser = Pageserializers(instance=pager_roles, many=True)
+
+                 #return sg.get_paginated_response(data=ser.data)  可以传下页URL
+                 return Response(ser.data)
+
+    - 如果数据量大，如何做分页？
+
+13、路由  14、视图
+    from rest_framework.generics import GenericAPIView
+    from rest_framework.viewsets import GenericViewSet 要改路由 as_view({'get':'list'})
+    大佬： from rest_framework.viewsets import ModelViewSet
+            视图：as_view({'post':'create'})  根据ModelViewSet里面的 create方法
+            from rest_framework.generics import GenericAPIView
+            from rest_framework.viewsets import GenericViewSet
+            from rest_framework.viewsets import ModelViewSet
+            class V1(ModelViewSet):
+                queryset = models.Role.objects.all()
+                serializer_class = Pageserializers
+                pagination_class = PageNumberPagination
+    -全自动路由
+        from rest_framework import routers
+        router = routers.DefaultRouter()
+        router.register('page',views.V1)
+        urlpatterns = [
+             re_path('app/(?P<version>[v1|v2]+)/',include(router.urls)),
+        ]
+15、渲染器
+    from rest_framework.renderers import JSONRenderer , BrowsableAPIRenderer ,(后面略)AdminRenderer,HTMLFormRenderer
+    class a(APIView):
+        renderer_classes = [JSONRenderer,]
+        def ......
