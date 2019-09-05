@@ -1,0 +1,555 @@
+一、配置文件
+    flask中的配置文件是一个flask.config.Config对象（继承字典）,默认配置为：
+    {
+        'DEBUG':                                get_debug_flag(default=False),  是否开启Debug模式
+        'TESTING':                              False,                          是否开启测试模式
+        'PROPAGATE_EXCEPTIONS':                 None,
+        'PRESERVE_CONTEXT_ON_EXCEPTION':        None,
+        'SECRET_KEY':                           None,
+        'PERMANENT_SESSION_LIFETIME':           timedelta(days=31),
+        'USE_X_SENDFILE':                       False,
+        'LOGGER_NAME':                          None,
+        'LOGGER_HANDLER_POLICY':               'always',
+        'SERVER_NAME':                          None,
+        'APPLICATION_ROOT':                     None,
+        'SESSION_COOKIE_NAME':                  'session',
+        'SESSION_COOKIE_DOMAIN':                None,
+        'SESSION_COOKIE_PATH':                  None,
+        'SESSION_COOKIE_HTTPONLY':              True,
+        'SESSION_COOKIE_SECURE':                False,
+        'SESSION_REFRESH_EACH_REQUEST':         True,
+        'MAX_CONTENT_LENGTH':                   None,
+        'SEND_FILE_MAX_AGE_DEFAULT':            timedelta(hours=12),
+        'TRAP_BAD_REQUEST_ERRORS':              False,
+        'TRAP_HTTP_EXCEPTIONS':                 False,
+        'EXPLAIN_TEMPLATE_LOADING':             False,
+        'PREFERRED_URL_SCHEME':                 'http',
+        'JSON_AS_ASCII':                        True,
+        'JSON_SORT_KEYS':                       True,
+        'JSONIFY_PRETTYPRINT_REGULAR':          True,
+        'JSONIFY_MIMETYPE':                     'application/json',
+        'TEMPLATES_AUTO_RELOAD':                None,
+    }
+     请求相关信息
+        request.method
+        request.args
+        request.form
+        request.values
+        request.cookies
+        request.headers
+        request.path
+        request.full_path
+        request.script_root
+        request.url
+        request.base_url
+        request.url_root
+        request.host_url
+        request.host
+        request.files
+        obj = request.files['the_file_name']
+        obj.save('/var/www/uploads/' + secure_filename(f.filename))
+
+        响应相关信息
+        return "字符串"
+        return render_template('html模板路径',**{})
+        return redirect('/index.html')
+
+        response = make_response(render_template('index.html'))
+        response是flask.wrappers.Response类型
+        response.delete_cookie('key')
+        response.set_cookie('key', 'value')
+        response.headers['X-Something'] = 'A value'
+        return response
+
+方式一：
+    app.config['DEBUG'] = True
+
+    PS： 由于Config对象本质上是字典，所以还可以使用app.config.update(...)
+
+方式二：
+    app.config.from_pyfile("python文件名称")
+        如：
+            settings.py
+                DEBUG = True
+
+            app.config.from_pyfile("settings.py")
+
+    app.config.from_envvar("环境变量名称")
+        环境变量的值为python文件名称名称，内部调用from_pyfile方法
+
+
+    app.config.from_json("json文件名称")
+        JSON文件名称，必须是json格式，因为内部会执行json.loads
+
+    app.config.from_mapping({'DEBUG':True})
+        字典格式
+
+    ---------------------------------------
+    app.config.from_object("python类或类的路径")
+    ---------------------------------------
+        app.config.from_object('pro_flask.settings.TestingConfig')
+
+        settings.py
+
+            class Config(object):
+                DEBUG = False
+                TESTING = False
+                DATABASE_URI = 'sqlite://:memory:'
+
+            class ProductionConfig(Config):
+                DATABASE_URI = 'mysql://user@localhost/foo'
+
+            class DevelopmentConfig(Config):
+                DEBUG = True
+
+            class TestingConfig(Config):
+                TESTING = True
+
+        PS: 从sys.path中已经存在路径开始写
+
+
+    PS: settings.py文件默认路径要放在程序root_path目录，如果instance_relative_config为True，则就是instance_path目录
+
+二、路由系统 (基于装饰器来实现，但是本质还是通过add_url_rule来实现)
+    add_url_rule(rule, endpoint=None,  view_func=None,   **options)
+    add_url_rule('/login', endpoint='m1',  view_func=login, methods=['GET','POST'])
+
+     @app.route和app.add_url_rule参数：
+            rule,                       URL规则
+            view_func,                  视图函数名称
+            defaults=None,              默认值,当URL中无参数，函数需要参数时，使用defaults={'k':'v'}为函数提供参数
+            endpoint=None,              名称，用于反向生成URL，即： url_for('名称')
+            methods=None,               允许的请求方式，如：["GET","POST"]
+
+
+            strict_slashes=None,        对URL最后的 / 符号是否严格要求，
+                                        如：
+                                            @app.route('/index',strict_slashes=False)，
+                                                访问 http://www.xx.com/index/ 或 http://www.xx.com/index均可
+                                            @app.route('/index',strict_slashes=True)
+                                                仅访问 http://www.xx.com/index
+            redirect_to=None,           重定向到指定地址
+                                        如：
+                                            @app.route('/index/<int:nid>', redirect_to='/home/<nid>')
+                                            或
+                                            def func(adapter, nid):
+                                                return "/home/888"
+                                            @app.route('/index/<int:nid>', redirect_to=func)
+            subdomain=None,             子域名访问
+                                                from flask import Flask, views, url_for
+
+                                                app = Flask(import_name=__name__)
+                                                app.config['SERVER_NAME'] = 'wupeiqi.com:5000'
+
+
+                                                @app.route("/", subdomain="admin")
+                                                def static_index():
+                                                    """Flask supports static subdomains
+                                                    This is available at static.your-domain.tld"""
+                                                    return "static.your-domain.tld"
+
+
+                                                @app.route("/dynamic", subdomain="<username>")
+                                                def username_index(username):
+                                                    """Dynamic subdomains are also supported
+                                                    Try going to user1.your-domain.tld/dynamic"""
+                                                    return username + ".your-domain.tld"
+
+
+                                                if __name__ == '__main__':
+                                                    app.run()
+
+三、自定义url匹配
+    # 导入BasseConverter类，作为所有自定义转换器的父类
+    from werkzeug.routing import BaseConverter
+
+
+    # 定义自己的转换器，继承于BaseConvert类
+    class RegexConverter(BaseConverter):
+        def __init__(self, url_map, regex):
+            # 调用父类的构造方法
+            super().__init__(map=url_map)
+            # 将正则表达式的参数保存到对象的属性中，flask会去使用这个属性来进行路由的正则匹配
+            self.regex = regex
+
+    # 将自定义的转换器添加到flask的应用中
+    app.url_map.converters['re'] = RegexConverter
+
+    # 然后就可以用了 re(r'regex'):mobile 的方式使用，如下
+    # 这里匹配的是一个十一位的数字
+    @app.route('/send/<re(r"\d{11}"):mobile>')
+    def send_message(mobile):
+        return 'send message to {}'.format(mobile)
+
+继承于自定义转换器之后，还可以实现 to_python 和 to_url 这两个函数去对匹配参数做进一步处理：
+    to_python：
+        该函数参数中的 value 值代表匹配到的值，可输出进行查看
+        匹配完成之后，对匹配到的参数作最后一步处理再返回，比如：转成 int 类型的值再返回
+    to_url:
+        在使用 url_for 去获取视图函数所对应的 url 的时候，会调用此方法对 url_for 后面传入的视图函数参数做进一步处理
+
+
+四、闪现
+    from flask import  flash , Flask, get_flashed_messages,request,redirect
+    app = Flask(__name__)
+    @app.route('/index')
+    def index():
+        val = request.args.get('v')
+        if val == 'ZJL':
+            return 'Hello world'
+        flash('超时错误',category='x1')
+        return 'Hello'
+
+    @app.route('/error')
+    def error():
+        data = get_flashed_messages(category_filter=['x1'])
+        if data:
+            msg = data[0]
+        else:
+            msg = '...'
+        return '错误信息：%s' %(msg)
+
+    if __name__ == '__main__':
+        app.run()
+
+五、请求扩展
+    a.基于before_request做用户认证
+        from flask import Flask,request
+        app = Flask(__name__)
+
+        @app.before_request
+        def process_request1(*args,**kwargs):
+            print('process_request 1 来了')
+
+        @app.before_request
+        def process_request2(*args,**kwargs):
+            print('process_request 2 来了')
+
+        @app.after_request
+        def process_response1(*args,**kwargs):
+            print('process_response 1 来了')
+
+        @app.after_request
+        def process_response2(*args,**kwargs):
+            print('process_response 2 来了')
+
+        @app.errorhandler(404)
+        def error_404(arg):
+            return '404 error'
+
+        @app.route('/index',methods=['GET'])
+        def index():
+            print('index函数')
+            return 'Index'
+
+    b.模板  调用方式：{{sb(1,2)}}  {{ 1|db(2,3)}}
+            @app.template_global()
+                def sb(a1, a2):
+                    return a1 + a2
+
+
+                @app.template_filter()
+                def db(a1, a2, a3):
+                    return a1 + a2 + a3
+
+六、中间件
+
+七、蓝图
+
+
+八、上下文
+    a.请求上下文
+        -request
+        -session
+    b.应用上下文
+        -app
+        -g  每个请求周期都会创建一共用于在请求周期中传递的一个容器
+
+    面向对象
+    -特殊的双下划线方法
+        __new__
+        __call__
+        __str__
+        __setattr__
+        __setitem__
+        __getattr__
+        __enter__
+        __exit__
+        __add__ (增删改查)
+
+        ps:(flask 的 LocalProxy )
+    类.__dict__ 查看里面封装的东西
+    MetaClass：
+        -用来指定当前类由谁来创建（默认Type创建）
+
+
+九、信号
+    request_started = _signals.signal('request-started')                # 请求到来前执行
+    request_finished = _signals.signal('request-finished')              # 请求结束后执行
+
+    before_render_template = _signals.signal('before-render-template')  # 模板渲染前执行
+    template_rendered = _signals.signal('template-rendered')            # 模板渲染后执行
+
+    got_request_exception = _signals.signal('got-request-exception')    # 请求执行出现异常时执行
+
+    request_tearing_down = _signals.signal('request-tearing-down')      # 请求执行完毕后自动执行（无论成功与否）
+    appcontext_tearing_down = _signals.signal('appcontext-tearing-down')# 请求上下文执行完毕后自动执行（无论成功与否）
+
+    appcontext_pushed = _signals.signal('appcontext-pushed')            # 请求上下文push时执行
+    appcontext_popped = _signals.signal('appcontext-popped')            # 请求上下文pop时执行
+    message_flashed = _signals.signal('message-flashed')                # 调用flask在其中添加数据时，自动触发
+
+    机制：
+        def wsgi_app(self, environ, start_response):
+
+        --------------------------------------上下文机制 threading.local()------------------------
+        ctx = self.request_context(environ)
+        ctx.push()
+        ------------------------------------------------------------------------------------------
+        error = None
+        try:
+            try:
+                -----------------------找视图函数  （信号机制开始）-----------------------------
+                response = self.full_dispatch_request()
+                ---------------------------------------------
+            except Exception as e:
+                error = e
+                response = self.make_response(self.handle_exception(e))
+            return response(environ, start_response)
+        finally:
+            if self.should_ignore_error(error):
+                error = None
+            ctx.auto_pop(error)
+
+    流程：
+        a.  self.try_trigger_before_first_request_functions()    ----->>>>>>   before_first_request是把自定义的函数
+            放到一个列表中(   self.before_first_request_funcs = []  )
+        b.full_dispatch_request  ---->>>> 触发 request_started 信号   request_started.send(self)
+        c. preprocess_request   ---->>>>>   before_request ( funcs = self.before_request_funcs.get(None, ()) )
+        d. render_template  ---->>>  return _render()
+            模板渲染
+                渲染前的信号 before_render_template.send(app, template=template, context=context)
+                    rv = template.render(context) # 模板渲染
+                渲染后的信号 template_rendered.send(app, template=template, context=context)
+        e. full_dispatch_request  ------>>>>   self.finalize_request(rv) -> process_response ------>>>>   request_finished.send(self, response=response)
+        f. finalize_request   ------>>>>  process_response ->   session.save_session()
+        g. 触发 request_finished信号
+
+        如果上述过程出错：
+            触发错误处理信号 got_request_exception.send(self, exception=e)
+
+        h. 触发信号 request_tearing_down
+
+十、模板jinja2
+
+
+十一、第三方插件
+    - 内置(将session保存在加密cookie中实现)
+        请求刚来：获取随机字符串，存在则去数据库获取个人资料，否则创建一个空容器
+        视图 ：    操作内存中 对象（随机字符串{放置数据的容器}）
+        响应 ： 内存对象（随机字符串{放置数据的容器}）
+                -将数据保存到数据库
+                -把随机字符串写在用户cookie中
+
+        app.run()->
+        run_simple(host, port, self, **options)-> self ->
+        __call__(self, environ, start_response)->
+        wsgi_app(self, environ, start_response)->
+        ctx.push()->
+        self.session = self.app.open_session(self.request)
+
+    -  flask-session
+        -列子
+            from flask import Flask , session
+            from flask_session import RedisSessionInterface
+
+            app = Flask(__name__)
+            app.secret_key = 'asdasda'
+
+            from redis import Redis
+            ------------------------1-------------------------
+            conn = Redis(host,pwd,......)
+            #key_prefix:添加到所有redis存储密钥的前缀。 use_signer：是否对会话ID cookie进行签名
+            app.session_interface = RedisSesssionInterface(conn,key_prefix='__',use_signer=False)
+            ----------------------------------------------------
+
+            ----------------------2-------------------------------
+            from flask.ext.session import Session
+            app.config['SESSION_TYPE'] = 'redis'
+            app.config['SESSION_REDIS'] = Redis(host='',port='')
+            Session(app)
+            ------------------------------------------------------
+
+            @app.route('/')
+            def index():
+                session['xxx'] = 123
+                return 'Index'
+            if __name__  ==  '__main__'
+                app.run()
+
+        - RedisSessionInterface源码解析
+                def open_session(self, app, request):
+                    #去cookie中获取key为session对应的值
+                    sid = request.cookies.get(app.session_cookie_name)
+                    if not sid:
+                        #创建一个随机的字符串
+                        sid = self._generate_sid()  #他会返回 str(uuid4())  一串随机的字符串   uuid4是生成随机的字符串
+                        #创建一个特殊的字典(sid,保存数据),并返回
+                        return self.session_class(sid=sid, permanent=self.permanent)
+                    if self.use_signer:
+                        signer = self._get_signer(app)
+                        if signer is None:
+                            return None
+                        try:
+                            sid_as_bytes = signer.unsign(sid)
+                            sid = sid_as_bytes.decode()
+                        except BadSignature:
+                            sid = self._generate_sid()
+                            return self.session_class(sid=sid, permanent=self.permanent)
+
+                    if not PY2 and not isinstance(sid, text_type):
+                        sid = sid.decode('utf-8', 'strict')  #变成字符串
+                    #根据前缀+你给的字符串
+                    val = self.redis.get(self.key_prefix + sid)
+                    if val is not None:
+                        try:
+                            data = self.serializer.loads(val)
+                            #data是字典
+                            #将字段转化成特殊的字典
+                            return self.session_class(data, sid=sid)
+                        except:
+                            return self.session_class(sid=sid, permanent=self.permanent)
+                    return self.session_class(sid=sid, permanent=self.permanent)
+
+                def save_session(self, app, session, response):
+                    domain = self.get_cookie_domain(app)
+                    path = self.get_cookie_path(app)
+                    if not session:
+                        if session.modified:
+                            self.redis.delete(self.key_prefix + session.sid)
+                            response.delete_cookie(app.session_cookie_name,
+                                                   domain=domain, path=path)
+                        return
+
+                    # Modification case.  There are upsides and downsides to
+                    # emitting a set-cookie header each request.  The behavior
+                    # is controlled by the :meth:`should_set_cookie` method
+                    # which performs a quick check to figure out if the cookie
+                    # should be set or not.  This is controlled by the
+                    # SESSION_REFRESH_EACH_REQUEST config flag as well as
+                    # the permanent flag on the session itself.
+                    # if not self.should_set_cookie(app, session):
+                    #    return
+
+                    httponly = self.get_cookie_httponly(app)
+                    secure = self.get_cookie_secure(app)
+                    expires = self.get_expiration_time(app, session)  #获取超时时间
+
+                    #session 中保存的值特殊字典，进行序列化:字符串
+                    val = self.serializer.dumps(dict(session))
+
+                    #将字符串写到redis
+                    {
+                        __sdasdqcneocn:{xxx:123,sid:sdasdqcneocn}
+                    }
+                    self.redis.setex(name=self.key_prefix + session.sid, value=val,
+                                     time=total_seconds(app.permanent_session_lifetime))
+
+
+                    if self.use_signer:
+                        session_id = self._get_signer(app).sign(want_bytes(session.sid))
+                    else:
+                        session_id = session.sid
+                    #session:sdasdqcneocn
+                    response.set_cookie(app.session_cookie_name, session_id,
+                                        expires=expires, httponly=httponly,
+                                        domain=domain, path=path, secure=secure)
+
+        -问：设置cookie是,如何设定关闭浏览器则cookie失效
+                reponse.set_cookie('k','v',exipre=None)
+
+        -其他：SqlAlchemySessionInterface、MongoDBSessionInterface、FileSystemSessionInterface、MemcachedSessionInterface
+
+十二、WTForms
+    -使用
+        -登陆
+        -注册
+    -如何实现
+        源码流程
+            1、解释：metaclass
+                -将定义的字段全部封装到LoginForm,LoginForm是由FormMeta创建的
+                -执行FormMeta.__init__
+                    LoginForm._unbound_fields = None
+                    LoginForm._wtforms_meta = None
+                -解释字段( 在StringField(field)的field中会创建UnboundField,它首先会判断)
+                    name = simple.StringField(...)
+                    pwd = simple.StringField(...)
+                -结果
+                    LoginForm.name = UnboundField(cls,*arg,**kwargs)
+                    LoginForm.pwd = UnboundField(cls,*arg,**kwargs)
+                LoginForm = {
+                    '__module__':''
+                    'name':''
+                    'pwd':''
+                    '_doc__':''
+                    '__unbound__field':''
+                    '__wtforms_meta':''
+                }
+            2、实例：form = LoginForm()
+              login继承Form  Form继承FormMeta和BaseForm
+                -
+                    先执行login.__call__  (执行FormMeta的__call__对unbound_field字段里面筛选选出自定义的field,筛选掉带下划线的)
+                        Form = {
+                          _fields:{
+                            'name':  StringField对象
+                            'pwd':   StringField对象
+                            }
+                          name:  StringField对象(widget = widgets.TextInput()),
+                          pwd:  StringField对象(widget = widgets.PasswordInput()),
+                        }
+                    在执行login.__new__
+                    在执行login.__init__
+                -
+                    1、StringField对象.__str__
+                    2、StringField对象.__call__
+                    3、meta.render_field(StringField对象,)
+                    4、StringField对象.widget(field,**render_kw)
+                    5、__call__.widget(field,**render_kw)
+                   最后拼接字符串，得到html代码
+            3、验证：form.validate()
+              form = LoginForm(formdata=request.form)
+                    -->> self.process(formdata, obj, data=data, **kwargs)   process应该是BaseForm里面的
+
+              form.validate()
+
+十三、SQLAlchmey  ORM
+     目标：类/
+     连接：
+        MySQL-Python
+            mysql+mysqldb://<user>:<password>@<host>[:<port>]/<dbname>
+        pymysql
+            mysql+pymysql://<username>:<password>@<host>/<dbname>[?<options>]
+
+     -SQLAlchmey
+        -Column类
+            1、name 列名
+            2、type_ 类型，更多类型 sqlalchemy.types
+            3、*args Constraint（约束）,  ForeignKey（外键）,  ColumnDefault（默认）, Sequenceobjects（序列）定义
+            4、key 列名的别名，默认None
+            下面是可变参数 **kwargs
+            5、primary_key 如果为True，则是主键
+            6、nullable 是否可为Null，默认是True
+            7、default 默认值，默认是None
+            8、index 是否是索引，默认是True
+            9、unique 是否唯一键，默认是False
+            10、onupdate 指定一个更新时候的值，这个操作是定义在SQLAlchemy中，不是在数据库里的，当更新一条数据时设置，大部分用于updateTime这类字段
+            11、autoincrement 设置为整型自动增长，只有没有默认值，并且是Integer类型，默认是True
+            12、quote 如果列明是关键字，则强制转义，默认False
+        -
+            1. `primary_key`：主键，True和False。
+            2. `autoincrement`：是否自动增长，True和False。
+            3. `unique`：是否唯一。
+            4. `nullable`：是否可空，默认是True。
+            5. `default`：默认值。
+            6. `onupdate`：在更新的时候，一般用在时间上面。
+     -Flask-SQLAlchmey
