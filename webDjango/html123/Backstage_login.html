@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <style>
+        body{
+            margin: 0;
+        }
+        .menu{
+            display:block ;
+            padding: 5px;
+        }
+
+        {% block style %}
+        {% endblock %}
+    </style>
+</head>
+<body>
+    <div style=" height: 50px; background-color: black;color: white;">
+        后台管理
+    </div>
+    <div>
+        <div style="position: absolute;top: 50px;left: 0;bottom: 0;width: 200px;background-color: cyan">
+            <a class="menu" href="/a/user_info">用户名</a>
+            <a class="menu" href="/a/user_information">用户组管理</a>
+        </div>
+        <div style="position: absolute;top: 50px;left: 210px;bottom: 0;right: 0;overflow: auto">
+                {% block content1 %}
+                {% endblock %}
+        </div>
+    </div>
+    {% block content %}
+    {% endblock %}
+
+    {% block script %}
+    {% endblock %}
+</body>
+</html>

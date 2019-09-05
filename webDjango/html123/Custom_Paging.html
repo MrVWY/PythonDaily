@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <style>
+        .page_list .page{
+            padding: 5px;
+            background-color: cyan ;
+            display: inline-block;
+            margin: 5px;
+        }
+        .page_list .page.active{
+            background-color: cornflowerblue;
+            color: white;
+        }
+
+    </style>
+</head>
+<body>
+    <div>
+        <ul>
+        {% for i in Paging_list %}
+            <li>{{ i }}</li>
+        {% endfor %}
+        </ul>
+    </div>
+    <div>
+        <a href="/b/Custom_Paging/?p=1">1</a>
+        <a href="/b/Custom_Paging/?p=2">2</a>
+        <a href="/b/Custom_Paging/?p=3">3</a>
+        {{ Paging_list_1|safe }}
+        {{ Paging_list_2 }}
+    </div>
+
+    <div class="page_list">
+        {{ page_list |safe }}
+    </div>
+
+</body>
+</html>

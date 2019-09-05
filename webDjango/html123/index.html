@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+    <form method="post" action="{% url 'index123' %}">
+        <p><input type="text" name="username" placeholder="用户名"/></p>
+        <p><input type="text" name="email" placeholder="邮箱"/></p>
+        <p><input type="button" value="提交"/></p>
+    </form>
+    <ul>
+        {% for k,row in user_list_1.items %}
+            <li><a target="aid" href="/a/detail-{{ k }}.html">{{ k }}</a></li>
+            <p>-----</p>
+            <li><a target="aid" href="/a/detail-{{ k }}-{{ k }}.html">{{ k }}</a></li>
+        {% endfor %}
+    </ul>
+</body>
+</html>

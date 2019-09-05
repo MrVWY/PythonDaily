@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+    <table border="1">
+        <thead>
+            <tr>
+            <th>APPlications</th>
+            <th>Hostname</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in user_list_10 %}
+                <tr>
+                    <td>{{ row.name }}</td>
+                    <td>
+                    {% for host in row.r.all %}
+                        {{ host.hostname }}
+                     {% endfor %}
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <form method="post">
+    <select name="group" multiple="multiple" size="2">
+         {% for v in user_list_11 %}
+             <option value= '{{ v.id }}'>{{ v.hostname }}</option>
+         {% endfor %}
+    <input type="text" placeholder="用户组名" name="usergroup_name"/>
+    <input type="submit" value="提交"/>
+    </select>
+    </form>
+</body>
+</html>

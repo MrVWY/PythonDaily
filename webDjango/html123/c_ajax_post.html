@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+    <input type="text" name="c1"/>
+    <input type="button" onclick=" ajax();" value="Ajax"/>
+    <script src="/static/jquery-3.3.1.js"></script>
+    <script>
+        function ajax(){
+            var xhr = new XMLHttpRequest();
+            xhr.open('POST','/c/ajax_post',true);
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState == 4){
+                    //接收完毕
+                    var obj = xhr.responseText;
+                    console.log(obj);
+                }
+            };
+            xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded; charset-UTF-8');
+            xhr.send('root=123;pwd=456;');
+        }
+    </script>
+</body>
+</html>

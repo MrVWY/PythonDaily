@@ -1,0 +1,55 @@
+记录本人开始学习django所遇到的问题
+1、ModuleNotFoundError: No module named 'html.entities'
+    估计是存放html的文件夹的名称和django框架的某个模块名称重复 它运行自己找到我创建的html文件夹
+
+2、静态文件css javascript 加载不了 解决404错误
+STATIC_URL = '/static/'
+#静态目录配置
+STATICFILES_DIRS = (
+    os.path.join(BASE_DIR, "static/"),
+)
+static是存放静态文件的文件名称上下要一致
+
+STATIC_ROOT = os.path.join(BASE_DIR, 'static')和STATIC_URL = '/static/'不能共存
+
+3、关于文件上传中 InMemoryUploadedFile的对象没有name
+在webDjango项目中当从login.html页面点击注册，跳转到zhuce.html页面时发生的file = request.FILES.get('uploadfile') file.name报错
+解决；从login.html页面点击注册的method要设置为get 来加载zhuce.html页面  如果设置为POST 那么就和文件上传的表单method设置的POST冲突
+那么第一次加载zhuce.html页面 就按POST的条件语句
+进入下面代码  因为是第一次加载 file里面没有任何数据 因此file调用InMemoryUploadedFile里面的属性就会报错
+    file = request.FILES.get('uploadfile')
+    print(file, type(file), file.name)
+    file_path = os.path.join('uploadfile', '2.jpg')
+    f = open(file_path, mode='wb')
+    for i in file.chunks():
+        f.write(i)
+    f.close()
+    return render(request, 'zhuce.html')
+要区分get post 建议跳转就使用get
+
+4、关于路由分发之后 跳转页面出现404问题
+ -注意是哪个app的跳转     /你的app/你app所要引用的html
+ -注意html里面的href action等自带的跳转  /你的app/你app所要引用的html  看detail.html
+
+5、关于from表单提交和return render()
+from表单提交会刷新一次页面，如果配合return render()，就会再刷新一次，此时如果render里面没有传进数据，就会导致页面里面的数据为空
+你可以使用redirect来再一次GET页面
+
+6、TypeError: 'int' object is not callable
+这个错误之所以发生，是因为我变量名和函数名写重复了!!!
+
+7、函数名不要和变量名一模一样
+8、如果不小心删除了Django里面的某个默认自带的表
+https://www.cnblogs.com/dhcn/p/7124693.html
+    一个记录生成表格的记录也就是我们的django_makemigrations
+    只需要删除之前你创建表格对应的那条记录
+    还需要删除migrations里的那个迁移文件，就是APP下的migrations目录下的
+    在执行python manage.py makemigrations,再然后,python manage.py migrate
+
+9、关于文件上传问题
+html：
+    <input type="file" name="file"/>
+后端：
+    file_obj = request.FILES.get('file')
+后端的get('file')中的file要对应input里面的name="file"
+

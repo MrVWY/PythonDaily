@@ -1,0 +1,142 @@
+{% extends 'Backstage_login.html' %}
+
+{% block style %}
+  .shade{
+    position: fixed;
+    top: 0;
+    right: 0;
+    left: 0;
+    bottom: 0;
+    background-color: black;
+    opacity: 0.6;
+    z-index: 100;
+ }
+.hide{
+     display: none;
+}
+ .Add_muen{
+       position: fixed;
+       height: 300px;
+       width: 400px;
+       top: 200px;
+       left: 50%;
+       margin-left: -200px;
+       z-index: 100;
+       border: 1px solid salmon;
+        background-color: white;
+}
+{% endblock %}
+
+{% block content1 %}
+    <!--<form method="post">
+        <input type="text" placeholder="用户名" name="username"/>
+        <input type="text" placeholder="密码" name="password"/>
+        <select name="group">
+            {% for v in user_list_3 %}
+                <option value= '{{ v.uid }}'>{{ v.captions }}</option>
+            {% endfor %}
+        </select>
+        <input type="submit" value="提交" />
+    </form>-->
+
+    <input type="submit" value="添加" id="submit"/>
+
+   <h3>用户列表</h3>
+    <ul>
+        {% for row in user_list_2 %}
+            <li>
+                <a href="/a/userdetail-{{ row.id }}">{{ row.username }}</a>
+                <a href="/a/userdelete-{{ row.id }}">删除</a>
+                <a href="/a/user_edit-{{ row.id }}">编辑</a>
+            </li>
+        {% endfor %}
+    </ul>
+
+     <table border="1">
+        <thead>
+            <tr>
+                <th>次数</th>
+                <th>用户名</th>
+                <th>用户所属ID</th>
+                <th>用户身份</th>
+                <th colspan="2">操作</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in user_list_2 %}
+            <tr>
+                <td><a>{{ forloop.counter }}</a></td>
+                <td><a>{{ row.username }}</a></td>
+                <td><a>{{ row.user_group_id }}</a></td>
+                <td><a>{{ row.user_group.captions }}</a></td>
+                <td><a href="/a/userdelete-{{ row.id }}">删除</a></td>
+                <td><a href="/a/userdetail-{{ row.id }}">编辑</a></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+
+    </table>
+{% endblock %}
+
+{% block content %}
+    <div class="shade hide"></div>
+    <div class="Add_muen hide">
+        <form method="post" id="i3">
+            <p><input type="text" placeholder="用户名" name="username" id="i1"/></p>
+            <p><span style="color: red" id="span1"></span></p>
+
+            <p><input type="password" placeholder="密码" name="password" id="i2"/></p>
+            <p><span style="color: red" id="span2"></span></p>
+
+            <select name="group">
+                {% for v in user_list_3 %}
+                    <option value= '{{ v.uid }}'>{{ v.captions }}</option>
+                {% endfor %}
+            </select>
+            <p><input type="submit" value="提交"/></p>
+        </form>
+
+        <form method="get">
+            <input type="submit" value="取消" id="cancel"/>
+        </form>
+        <input id="Ajax_sumbit" type="submit" value="Ajax"/>
+    </div>
+{% endblock %}
+
+{% block script %}
+    <script src="/static/jquery-3.3.1.js"></script>
+    <script>
+        $(function () {
+            $('#submit').click(function () {
+                $('.shade,.Add_muen').removeClass('hide');
+            });
+
+            $('#cancel').click(function () {
+                $('.shade,.Add_muen').addClass('hide');
+            });
+
+            $('#Ajax_sumbit').click(function () {
+                $.ajax({
+                    url:'/a/test_ajax',
+                    type:'POST',
+                    data:{username:$('#i1').val(),password:$('#i2').val()},
+                    //data:$('#i3').serialize()
+                    //dataType:'JSON'
+                    success:function (data) {
+                        var message = JSON.parse(data);
+                        if(message.status){
+                            alert('OK')
+                        }else {
+                            $('#span1').text(message.username_error);
+                            $('#span2').text(message.password_error);
+                        }
+
+                    }
+                })
+            });
+
+
+        })
+
+    </script>
+{% endblock %}

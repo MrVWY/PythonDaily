@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body style="margin: 0">
+    <div style="height: 48px;background-color: cyan"></div>
+    <div>
+        <form method="post">
+            <input type="text" placeholder="用户名" name="username"/>
+            <input type="text" placeholder="email" name="email"/>
+            <input type="text" placeholder="年龄" name="age"/>
+            <input type="submit" value="提交" />
+        </form>
+    </div>
+    <div>
+        <table border="1">
+            {% for row in user_list %}
+               <tr>
+                    <td >{{ row.username }}</td>
+                    <td >{{ row.email }}</td>
+                    <td>{{ row.age }}</td>
+                    <td>
+                        <a class="edit">编辑</a> | <a class="delete">删除</a>
+                    </td>
+                </tr>
+            {% endfor %}
+    </table>
+    </div>
+
+</body>
+</html>

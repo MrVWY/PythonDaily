@@ -1,0 +1,9 @@
+{% extends 'Backstage_login.html' %}
+{% block content1 %}
+    <h3>用户列表</h3>
+    <ul>
+        {% for row in user_list %}
+            <li><a href="/a/userdetail-{{ row.id }}">{{ row.username }}</a></li>
+        {% endfor %}
+    </ul>
+{% endblock %}

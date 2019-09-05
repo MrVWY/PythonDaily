@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <style>
+        .upload{
+            display: inline-block;
+            padding: 10px;
+            background-color: cyan;
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            right: 0;
+            left: 0;
+            z-index: 90;
+        }
+        .file{
+            width: 100px;
+            height: 50px;
+            opacity: 0;
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            right: 0;
+            left: 0;
+            z-index: 100;
+        }
+    </style>
+</head>
+<body>
+    <div style="position: relative; width: 100px; height: 50px">
+        <input type="file" id="c1" name="upload_1" class="file" />
+        <a class="upload">上传</a>
+    </div>
+
+    <input type="submit" value="sumbit" onclick="sunbit()"/>
+    <input type="submit" value="jquery.sumbit" onclick="Jquery_sumbit()">
+
+    <hr/>
+
+    <form action="/c/upload_file/" method="POST" target="if1" enctype="multipart/form-data">
+        <iframe id="if" name="if1" ></iframe>
+        <input id="file" type="file" name="file"/>
+        <input type="submit"  value="提交show_img"  onclick="show_img()"/>
+        <input type="submit"  value="提交iframesubmit" id="onclick"/>
+    </form>
+
+    <input type="button" value="显示图片" onclick="show_img()"/>
+
+    <div id="show_picture"></div>
+
+    <script src="/static/jquery-3.3.1.js"></script>
+    <script>
+            function sunbit() {
+                var file_obj = document.getElementById('c1').files[0];
+                var file_data = new FormData();
+                file_data.append('username','root');
+                file_data.append('file',file_obj);
+                var xhr = new XMLHttpRequest();
+                xhr.open('POST','/c/upload_file/',true);
+                xhr.onreadystatechange = function () {
+                    if (xhr.readyState == 4){
+                        //接收完毕
+                        var obj = xhr.responseText;
+                        console.log(obj);
+                    }
+                };
+                xhr.send(file_data);
+            }
+            $("#file").change(res=>{
+                console.log($("#file"));
+                console.log($("#file").val())
+            });
+            function Jquery_sumbit() {
+                 var file_obj = document.getElementById('c1').files[0];
+                 var file_data = new FormData();
+                 file_data.append('username','root');
+                 file_data.append('file',file_obj);
+                 $.ajax(
+                     {
+                         url:'/c/upload_file/',
+                         type:'POST',
+                         data:file_data,
+                         processData:false, //告诉jquery不要处理数据
+                         contentType:false, //告诉jquery不要设置内容类型
+                         success:function (data) {
+                                console.log(data);
+                         }
+                     }
+                 )
+            }
+
+            function iframesubmit() {
+                console.log(111223);
+                setTimeout(function() {
+                    $('#onclick').on(function () {
+                        var text = $('#if').contents().find('body').text();
+                        console.log(123);  //mistake   no input
+                        var obj = JSON.parse(text);
+                        console.log(obj);
+                        var a = document.createElement('img');
+                        a.src = '/' + obj.data;
+                        $('#show_picture').empty().append(a);
+                    })
+                },1000);
+            }
+
+
+            function show_img () {
+                console.log(1111);
+                setTimeout(function(){
+                    var text = $('#if').contents().find('body').text();
+                    //console.log(text);
+                    var as = JSON.parse(text);
+                    //console.log(text);
+
+                    var a = document.createElement('img');
+                    a.src='/'+as.data;
+                    $('#show_picture').empty().append(a);
+                },1000);
+            }
+    </script>
+</body>
+</html>

@@ -1,0 +1,36 @@
+{% extends 'Backstage_login.html' %}
+{% block content1 %}
+    <h1>用户信息修改</h1>
+    <form method="post" >
+        <input type="text" name="username"/>
+        <input type="text" name="password"/>
+        <select name="group">
+                {% for v in user_list_3 %}
+                    <option value= '{{ v.uid }}'>{{ v.captions }}</option>
+                {% endfor %}
+        </select>
+        <input type="submit" value="提交"/>
+    </form>
+    <a href="/a/user_info">返回</a>
+
+    <table border="1">
+        <thead>
+            <tr>
+                <th>用户ID</th>
+                <th>用户名</th>
+                <th>用户密码</th>
+                <th>用户组ID</th>
+                <th>用户身份</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>{{ result.id }}</td>
+                <td>{{ result.username }}</td>
+                <td>{{ result.password }}</td>
+                <td>{{ result.user_group_id }}</td>
+                <td>{{ result.user_group.captions }}</td>
+            </tr>
+        </tbody>
+    </table>
+{% endblock %}

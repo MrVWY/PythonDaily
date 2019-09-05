@@ -1,0 +1,50 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title></title>
+    <link rel="stylesheet" media="screen" href="/static/css/first_login.css">
+</head>
+<body>
+    <div class="login_explain" style="padding: 5px">
+        <p>注意这前端不是我写的 </p>
+    </div>
+
+    <div id="particles-js" style="display: flex;align-items: center;justify-content: center"></div>
+    <div class="login-page">
+        <div class="login-content">
+            <div class="login-tit">登录</div>
+            <form method="post" >
+                <div class="login-input">
+                    <input type="text" placeholder="用户名/手机号" name="username_or_phone">
+                </div>
+                <div class="login-input">
+                    <input type="password" placeholder="密码" name="password">
+                </div>
+                <div class="login-codeinput">
+                    <input type="text">
+                    <img src="/static/img/SXuJ.jpg">
+                </div>
+                <div>
+                    <h3><span style="color: crimson">{{ error_message }}</span></h3>
+                </div>
+                <div class="login-btn-right" >
+                        <input type="checkbox" name="remember"/>记住密码
+                </div>
+                <div class="login-btn">
+                    <div class="login-btn-left">
+                        <input type="submit" value="登陆" name="login" style="padding: 10px 30px;border-radius: 5px;cursor: pointer; "/>
+                    </div>
+                </div>
+            </form>
+            <div  class="login-btn-right">
+                    <a href="/register/"><input type="submit" value="注册" name="register" style="padding: 10px 30px;border-radius: 5px;cursor: pointer;"/></a>
+             </div>
+         </div>
+    </div>
+
+    <script src="/static/js/particles.js"></script>
+    <script src="/static/js/app.js"></script>
+
+</body>
+</html>

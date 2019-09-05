@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+<form  method="post" enctype="multipart/form-data">
+{#    <p>#}
+{#       <label for="username">用户名</label>#}
+{#       <input type="text" id="username" name="user"/>#}
+{#    </p>#}
+{#    <p>#}
+{#        <label for="password">密码</label>       <!--//for:点击一下密码光标就转到文本框-->#}
+{#        <input type="password" id="password" name="pwd"/>#}
+{#    </p>#}
+{#    <p>#}
+{#        <label for="password">手机号</label>       <!--//for:点击一下密码光标就转到文本框-->#}
+{#        <input type="text" id="phone_number" name="phone_number"/>#}
+{#    </p>#}
+
+    <p>{{ obj.user.label }}{{ obj.user }}{{ obj.user.pwd.0 }}</p>
+    <p>{{ obj.pwd.label }}{{ obj.pwd }}{{ obj.errors.pwd.0 }}</p>
+    <p>{{ obj.email.label }}{{ obj.email }}{{ obj.errors.email.0 }}</p>
+    <p>{{ obj.phonenumber.label }}{{ obj.phonenumber }}{{ obj.errors.phonenumber.0 }}</p>
+
+    <p>
+        n<input type="radio" value="1" name="gender_n"/>
+        p<input type="radio" value="2" name="gender_p"/>
+    </p>
+    <p>
+        n<input type="checkbox" value="1" name="favor_n"/>
+        p<input type="checkbox" value="2" name="favor_p"/>
+    </p>
+    <p>
+        <select name="city">
+            <option value="a">aaaaaaaaaa</option>
+            <option value="b">bbbbbbbbbb</option>
+            <option value="c">cccccccccc</option>
+            <option value="d">dddddddddd</option>
+            <option value="e">eeeeeeeeee</option>
+        </select>
+    </p>
+    <p>头像</p>
+    <input type="file" name="uploadfile"/>
+
+    <input type="submit" value="提交">
+
+</form>
+    <span style="color: crimson">{{ error_msg }}</span>
+    <script src="/static/jquery-3.3.1.js"></script>
+</body>
+</html>

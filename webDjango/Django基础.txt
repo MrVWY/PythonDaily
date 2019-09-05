@@ -1,0 +1,845 @@
+1、Django请求生命周期
+   -->URL对应关系（匹配） -->视图函数 -->返回用户字符串
+   -->URL对应关系（匹配） -->视图函数 -->打开一个HTML文件，读取内存
+2、路由系统
+    /index/                 ->函数或类.as_view()
+    /detail/(\d+)           ->函数(参数)或类.as_view()(参数)
+    /detail/(?P<nid>\d+)    ->函数(参数)或类.as_view()(参数)
+    /detail/                -> include('app01.urls')
+    /detail/   name='a1'    -> include('app01.urls')
+                            -视图中: reverse
+                            -模板中: {{%    %}}
+
+3、视图
+    FBV:函数
+    def index(request,*args,**kwargs):
+        pass
+
+    CBV:类
+         class Home(view.View)
+              def get(self,request,*args,**kwargs)
+                    pass
+               def post(self,request,*args,**kwargs)
+                    pass
+
+    获取用户请求中的数据
+    request.body()包含所有数据
+        request.POST.get(request.body)
+        request.GET.get('pwd')
+        request.FILES.get()  看zhuce.html  表单设置<form  method="post" enctype="multipart/form-data">
+        request.path_info   request.path  请求路径
+        request.method
+        request.scheme 代表请求的方案，http或者https
+        request.encoding
+        request.cookies
+    request.Meta()  是一个python的字典，包含了所有本次HTTP请求的Header信息，比如用户IP地址和用户Agent（通常是浏览器的名称和版本号，具体的头部信息取决于客户端和服务器）
+        IP：
+        request.META['REMOTE_ADDR'] 正常情况下，REMOTE_ADDR
+        但是有些网址服务器会使用ngix等代理http，或者是做了负载均衡，此时应该用HTTP_X_FORWARDED_FOR
+            request.META['HTTP_X_FORWARDED_FOR']  获取IP
+        请求头：
+            request.META.get('HTTP_AUTHORIZATION','b')????
+        下面列举Meta里面所包含的一些数据段（不知道有没有区分大小写 ）
+            content.type
+            CSRF_COOKIE
+            HTTP_COOKIE  csrftoken,sessionid
+            REMOTE_ADDR —— 客户端的IP 地址。
+            REMOTE_HOST —— 客户端的主机名。
+            REMOTE_USER —— 服务器认证后的用户。
+
+    给用户返回数据
+        from django.shortcuts import HttpResponse
+            return HttpResponse('<h2>okok</h2>')
+        from django.shortcuts import render  #重定向不能用
+            return  render(request,'login.html',{'error_msg':error_msg})
+        from django.shortcuts import redirect   #重定向
+            return redirect('/a/index/')
+
+4、模板语言
+{% extends '××.html' %}
+关键语法：{% block 这里填一个名称 %} {% endblock %}
+{% include '××.html' %}导入模块里面可以只有<form></form>
+  -html继承
+    Backstage_login.hrml
+     ...........................
+        <div style="position: absolute;top: 50px;left: 210px;bottom: 0;right: 0;overflow: auto">
+                {% block content1 %}
+                {% endblock %}
+        </div>
+     ........................
+    user_imformation.html
+        {% extends 'Backstage_login.html' %}  继承
+        {% block content1 %}
+                isadhoahodqhnocnocn
+        {% endblock %}
+
+  -hhhhhhhhh
+    {% for v in user_list_3 %}
+                <option value= 'v.uid'>{{ v.captions }}</option>
+    {% endfor %}
+
+5、ORM
+在models.py下
+    a、创建类和字段
+        class User(models.Model):
+            gender = (
+                ('male', "男"),
+                ('female', "女"),
+                     )
+            id = models.IntegerField()
+            name = models.CharField(max_length=12)
+            sex = models.CharField(max_length=32, choices=gender, default="男")
+
+            class Meta: (Django模型类的Meta是一个内部类，它用于定义一些Django模型类的行为特性)
+                app_label='你所创建的APP名称'  #该选项是在你的模型类不在默认的应用程序的models.py下时，你就需要该选项来指明这个模型类是那个应用程序下的
+                db_table='你自己想要定义的数据库表名'  #Django自己有一套规则来生成数据库的表名  如果想自定义，就使用该选项
+                db_tablespace
+                get_latest_by
+                manmaged= True  or false  #这个选项为True时Django可以对数据库表进行 migrate或migrations、删除等操作。在这个时间Django将管理数据库中表的生命周期。如果为False的时候，不会对数据库表进行创建、删除等操作。可以用于现有表、数据库视图等，其他操作是一样的。
+                order_with_respect_to
+                ordering = ['order_date']升序  ['-order_date']降序  ['?order_date']随机排序  ['-pub_date','author']对pub_date降序，然后对author升序      #告诉Django模型对象返回的记录集是按照什么字段来排序
+                permissions  为了在Django Admin管理模块下使用
+                unique_together
+                verbose_name=''   给你的模型类起一个名字
+                verbose_name_plural  指定模型的复数形式是什么  默认：verbose_name + 's'
+
+        Terminal:
+            命令：
+                python manage.py makemigrations
+                python manage.py migrate
+         先在setting.py 修改
+                默认：
+                     NSTALLED_APPS = [
+                            'django.contrib.admin', #管理站点。
+                            'django.contrib.auth',  #认证系统
+                            'django.contrib.contenttypes', # 内容类型的框架
+                            'django.contrib.sessions',#会话框架
+                            'django.contrib.messages',#消息传递框架。
+                            'django.contrib.staticfiles',#用于管理静态文件的框架。
+                        ]
+                修改后：
+                        NSTALLED_APPS = [
+                            'django.contrib.admin', #管理站点。
+                            'django.contrib.auth',  #认证系统
+                            'django.contrib.contenttypes', # 内容类型的框架
+                            'django.contrib.sessions',#会话框架
+                            'django.contrib.messages',#消息传递框架。
+                            'django.contrib.staticfiles',#用于管理静态文件的框架。
+                            'app name' #这里填写你创建APP的名称
+                        ]
+                配置其他数据库(参考文档：# Database  # https://docs.djangoproject.com/en/2.2/ref/settings/#databases )
+                       DATABASES = {
+                            'default': {
+                                'ENGINE': 'django.db.backends.postgresql',  'django.db.backends.mysql'  ，'django.db.backends.sqlite3'  ，'django.db.backends.oracle'
+                                'NAME': ' ',
+                                'USER': ' '
+                                'PASSWORD': ' ',
+                                'HOST': ' ',
+                                'PORT': ' ',
+                            }
+                        }
+                Django默认使用Mysql模块链接mysql，需要在project目录下的__init__.py下
+                        import pymysql
+                        pymysql.install_as_mysqldb()
+在views.py下
+    b、操作
+        #创建
+        models.UserInfo.objects.create(username='root',password='toor')
+        dic = {'username':'root2','password':'toor2'}
+        models.UserInfo.objects.create(**dic)
+        #创建
+        obj = models.UserInfo(username='root1',password='toor1')
+        obj.save()
+        #查
+        result = models.UserInfo.objects.all() QuerySet 获取到的是对象
+        result = models.UserInfo.objects.all().values('id','caption') QuerySet 获取到的是字典
+        result = models.UserInfo.objects.all().values_list('id','caption') QuerySet 获取到的是元组
+        result.QuerySet => Django =>[]
+        [obj(id,username,password),obj(id,username,password),obj(id,username,password)]
+        result = models.UserInfo.objects.filter(username='root',password='toor')
+        #获取一个对象，如果不存在就报错
+        models.UserInfo.object.get(id=1)
+
+        #删除
+        models.UserInfo.objects.filter(username='root', password='toor').delete()
+        #更新
+        models.UserInfo.objects.all().update(password='1')
+        models.UserInfo.objects.filter(username='root').update(password='1')
+        models.UserInfo.objects.filter(id__gt=1).update(password='1')  id大于一
+        models.UserInfo.objects.filter(id__lt=1).update(password='1')  id小于一
+        models.UserInfo.objects.filter(id__gte=1).update(password='1')  id大于等于一
+        models.UserInfo.objects.filter(id__lte=1).update(password='1')  id大于等于一
+        models.UserInfo.objects.exclude(id__lte=1).update(password='1')  id不等于一
+        models.UserInfo.objects.exclude(id__range=[1,2])
+        for row in result:
+             print(row.id,row.username,row.password)
+        models.UserGroup.objects.create(captions='BOSS')
+        models.UserGroup.objects.create(captions='CEO')
+        models.UserGroup.objects.create(captions='staff-mumber')
+
+        model.UserGroup.objects,all().select_related('外键字段')  #跨表查询
+
+    c、外键
+        class UserType(models.Model):
+            caption = models.CharField(max_length=32)
+        class User(models.Model):
+            age = models.IntergerField(max_length=32)
+            name = models.CharField(max_length=32)
+            user_type_id = models.ForeignKey('UserType',to_field='id',on_delete=models.CASCADE)  这三个在Django2.0版本之后必填
+         一对多的就使用外键
+    d、多对多(Host Application)
+        无法直接对第三张表进行操作
+        r = models.ManyToManyField('表名') 自动创建关系表
+
+
+        obj = Application.objects.get(id=1)
+        obj.name
+        obj.r.add(1) 1.1
+        obj.r.add(2) 1.2
+
+        obj.r.remove(1)
+        obj.r.remove(2)
+        obj.r.remove(*[1,2,3])
+
+        obj.r.clear()
+        boj.r.set([3,5,7])
+    e、一对多 多对多中on_delete的参数  (Django2.0以上版本才有，不写就会报错)
+        on_delete=None,               # 删除关联表中的数据时,当前表与其关联的field的行为
+        on_delete=models.CASCADE,     # 删除关联数据,与之关联也删除
+        on_delete=models.DO_NOTHING,  # 删除关联数据,什么也不做
+        on_delete=models.PROTECT,     # 删除关联数据,引发错误ProtectedError
+        # models.ForeignKey('关联表', on_delete=models.SET_NULL, blank=True, null=True)
+        on_delete=models.SET_NULL,    # 删除关联数据,与之关联的值设置为null（前提FK字段需要设置为可空,一对一同理）
+        # models.ForeignKey('关联表', on_delete=models.SET_DEFAULT, default='默认值')
+        on_delete=models.SET_DEFAULT, # 删除关联数据,与之关联的值设置为默认值（前提FK字段需要设置默认值,一对一同理）
+        on_delete=models.SET,         # 删除关联数据,
+
+6、Ajax
+    $('#Ajax_sumbit').click(function () {
+                $.ajax({
+                    url:'/a/test_ajax',
+                    type:'POST',
+                    data:{username:$('#i1').val(),password:$('#i2').val()},
+                    //dataType:'JSON'
+                    //traditional：true
+                     //data:$('#i3').serialize()
+                    success:function (data) {
+                        if (data == 'OK'){
+                            location.reload();
+                        }else{
+                            alert(data);
+                        },
+
+                    }
+                })
+     });
+     data使用字典json.dumos()   json.parse()
+
+    原生Ajax --XmlHttpRequest
+        XmlHttpRequest 对象介绍
+           A.    void open(String method,String url,Boolen async)
+                       用于创建请求
+                 参数：
+                   method：请求方式（字符串类型）
+                   url: 请求的地址 （字符串类型）
+                   async ： 是否异步  （布尔类型）
+           B.   void send(String body)
+                       用于发送请求
+                    参数：
+                       body： 发送的数据 （字符串类型）
+           C.   void setRequestHeader(String header,String value)
+                       用于设置请求头
+                   参数：
+                       header： 请求头的key（字符串类型）
+                       vlaue：  请求头的value（字符串类型）
+           D.   String getAllResponseHeaders()  获取所有响应头
+                String getResponseHeader(String header)     获取响应头中指定header的值
+                void abort()  终止请求
+        XmlHttpRequest对象的只要属性
+            a.  Number readyState (状态值-整数)
+                0-未初始化   1-启动，调用了open()方法，为调用send()方法  2-发送，已经调用了send()方法，未接收到响应
+                3-接收，已经接收到部分响应数据  4-完成 已经接收到全部响应数据
+            b.  Function onreadystatechange
+
+    Jquery-> ajax
+
+    伪Ajax ->iframe
+
+    时机：
+        发送普通的数据  -> Jquery XmlHttpRequest iframe
+
+7、cookie 一般敏在cookie里面
+    request.COOKIES['key']
+    request.get_signed_cookie(key, default=RAISE_ERROR, salt='', max_age=None)
+    参数：
+        default: 默认值
+           salt: 加密盐
+        max_age: 后台控制过期时间
+
+    rep.set_cookie(key,value,...)
+    rep.set_signed_cookie(key,value,salt='加密盐',...)
+    参数：
+        key,              键
+        value='',         值
+        max_age=None,     超时时间
+        expires=None,     超时时间(IE requires expires, so set it if hasn't been already.)
+        path='/',         Cookie生效的路径，/ 表示根路径，特殊的：跟路径的cookie可以被任何url的页面访问
+        domain=None,      Cookie生效的域名
+        secure=False,     https传输
+        httponly=False    只能http协议传输，无法被JavaScript获取（不是绝对，底层抓包可以获取到也可以被覆盖）
+
+8、Session
+    Django默认是将Session数据存储在数据库中。即在django_session
+    a、Session
+        Cookie是保存在用户浏览器端的键值对
+        Session是保存在服务器端的键值对,还要依赖于Cookie
+        Session = {
+            随机字符串1:{
+            'is_login':'True'
+            'user':'sdasda'
+            ..........................
+           }
+           随机字符串2:{
+            'is_login':'True'
+            'user':'sdasda'
+            ..........................
+           }
+        }
+    request.session.delete('session_key')
+    request.session.clear() 注销
+    b、所有的键、值、键值对
+         request.session.keys()
+         request.session.values()
+         request.session.items()
+         request.session.iterkeys()
+         request.session.itervalues()
+         request.session.iteritems()
+    c、用户session的随机字符串
+         request.session.session_key
+       将所有Session失效日期小于当前日期的数据删除
+          request.session.clear_expired()
+       设置超时时间
+            request.session.set_expiry()
+    d、 配置 settings.py
+    (引擎配置)
+    SESSION_ENGINE = 'django.contrib.sessions.backends.file'    # 引擎  有错.file
+    SESSION_FILE_PATH = None //os.path.join(BASE_DIR,'文件名')                                    # 缓存文件路径，如果为None，则使用tempfile模块获取一个临时地址tempfile.gettempdir()                                                            # 如：/var/folders/d3/j9tj0gz93dg06bmwxmhh6_xm0000gn/T
+
+    默认操作(通用配置)
+    SESSION_COOKIE_NAME ＝ "sessionid"                          # Session的cookie保存在浏览器上时的key，即：sessionid＝随机字符串
+    SESSION_COOKIE_PATH ＝ "/"                                  # Session的cookie保存的路径
+    SESSION_COOKIE_DOMAIN = None                                # Session的cookie保存的域名
+    SESSION_COOKIE_SECURE = False                               # 是否Https传输cookie
+    SESSION_COOKIE_HTTPONLY = True                              # 是否Session的cookie只支持http传输
+    SESSION_COOKIE_AGE = 1209600                                # Session的cookie失效日期（2周）
+    SESSION_EXPIRE_AT_BROWSER_CLOSE = False                     # 是否关闭浏览器使得Session过期
+    SESSION_SAVE_EVERY_REQUEST = False                          # 是否每次请求都保存Session，默认修改之后才保存
+
+9、CSRF
+    在setting.py里面有个  'django.middleware.csrf.CsrfViewMiddleware',
+    html里面 {% csrf_token %}  这是一个随机字符串  POST提交时要带上才能正常访问
+
+    FBV：
+    from django.views.decorators.csrf import csrf_exempt,csrf_protect..........
+    django为用户实现防止跨站请求伪造的功能，通过中间件 django.middleware.csrf.CsrfViewMiddleware 来完成。而对于django中设置防跨站请求伪造功能有分为全局和局部。
+    全局：
+        中间件 django.middleware.csrf.CsrfViewMiddleware
+    局部：
+        @csrf_protect，为当前函数强制设置防跨站请求伪造功能，即便settings中没有设置全局中间件。
+        @csrf_exempt，取消当前函数防跨站请求伪造功能，即便settings中设置了全局中间件。用装饰器
+        注：from django.views.decorators.csrf import csrf_exempt,csrf_protect
+
+    CBV：
+        from django.utils.decorators import method_decorator
+        1、class find():
+            @method_decorator(csrf_exempt)
+            def dispatch(self,request,*args,**kwargs)
+                return super(find,self).dispath(request,*args,**kwargs)
+        2、
+        @method_decorator(csrf_exempt,name="dispatch)
+        class find():
+            def dispath(self,request,*args,**kwargs)
+                return super(find,self).dispath(request,*args,**kwargs)
+
+10、文件上传(1、基于原生的Ajax 2、基于Jquery的Ajax  3、iframe)
+html：
+    <div style="position: relative; width: 100px; height: 50px">
+        <input type="file" id="c1" name="upload_1" class="file" />
+        <a class="upload">上传</a>
+    </div>
+    <input type="submit" value="sumbit" onclick="sunbit()"/>
+    <input type="submit" value="jquery.sumbit" onclick="Jquery_sumbit()">
+    <hr/>
+    <form action="/c/upload_file/" method="POST" target="if1" enctype="multipart/form-data">
+        <iframe id="if" name="if1" ></iframe>
+        <input type="file" name="file"/>
+        <input type="submit" value="提交" onclick="iframesubmit()"/>
+    </form>
+    <div id="show_picture"></div>
+    <script src="/static/jquery-3.3.1.js"></script>
+    <script>
+            function sunbit() {
+                var file_obj = document.getElementById('c1').files[0];
+                var file_data = new FormData();
+                file_data.append('username','root');
+                file_data.append('file',file_obj);
+                var xhr = new XMLHttpRequest();
+                xhr.open('POST','/c/upload_file/',true);
+                xhr.onreadystatechange = function () {
+                    if (xhr.readyState == 4){
+                        //接收完毕
+                        var obj = xhr.responseText;
+                        console.log(obj);
+                    }
+                };
+                xhr.send(file_data);
+            }
+
+            function Jquery_sumbit() {
+                 var file_obj = document.getElementById('c1').files[0];
+                 var file_data = new FormData();
+                 file_data.append('username','root');
+                 file_data.append('file',file_obj);
+                 $.ajax(
+                     {
+                         url:'/c/upload_file/',
+                         type:'POST',
+                         data:file_data,
+                         processData:false, //告诉jquery不要处理数据
+                         contentType:false, //告诉jquery不要设置内容类型
+                         success:function (data) {
+                                console.log(data);
+                         }
+                     }
+                 )
+            }
+
+            function iframesubmit() {
+                 $('#if').on(function () {
+                    var text = $('#if').contents().find('body').text();
+                    var obj = JSON.parse(text);
+
+                    $('#show_picture').empty();
+                    var imgT = document.createElement('img');
+                    imgT.src='/'+obj.data;
+                    $('#show_picture').append(imgT);
+                })
+            }
+    </script>
+后端：  (记得加路由)
+    def upload(request):
+        return render(request,'c_upload.html')
+
+    def upload_file(request):
+        #username = request.POST.get('username')
+        file_obj = request.FILES.get('file')
+        print(file_obj)
+        #print(username)
+        img_path = os.path.join('static/',file_obj.name)
+        print(img_path)
+        with open(img_path,'wb') as f:
+            for item in file_obj.chunks():
+                f.write(item)
+        rep = {'data':img_path}
+        return HttpResponse(json.dumps(rep))
+
+11、Form验证
+    Field
+        required=True,               是否允许为空
+        widget=None,                 HTML插件
+        label=None,                  用于生成Label标签或显示内容
+        initial=None,                初始值
+        help_text='',                帮助信息(在标签旁边显示)
+        error_messages=None,         错误信息 {'required': '不能为空', 'invalid': '格式错误'}
+        show_hidden_initial=False,   是否在当前插件后面再加一个隐藏的且具有默认值的插件（可用于检验两次输入是否一直）
+        validators=[],               自定义验证规则
+        localize=False,              是否支持本地化
+        disabled=False,              是否可以编辑
+        label_suffix=None            Label内容后缀
+
+        CharField(Field),
+        EmailField
+        FileField(Field)   allow_empty_file=False
+        MultiValueField(Field)
+            PS: 抽象类，子类中可以实现聚合多个字典去匹配一个值，要配合MultiWidget使用，提供接口，需要自己实现
+        ComboField(Field)
+
+    class FM(forms.Form):
+        def mobile_validate(value):
+            mobile_re = re.compile(r'^666[0-9]+$')
+            if  mobile_re.match(value):
+                raise ValidationError('手机号码格式错误')
+
+        #调用
+        def clean_username(self):
+            value = self.cleaned_data['phonenumber_2']
+            if "666" in value:
+                try:
+                    raise ValidationError('666已经被玩烂了...', 'invalid')
+                except:
+                    print('666已经被玩烂了')
+                    username = '666已经被玩烂了'
+                    return username
+            return value
+
+        user = fields.CharField(
+            required=True,  # 必填字段
+            widget= widgets.TextInput(attrs={'class':'c1','placeholder':u'用户名'}),
+            error_messages={'required':'用户名不能为空'},
+            initial = 'root',  #默认值
+            label='用户名',
+        )
+        pwd = fields.CharField(
+            max_length=12,
+            min_length=6,
+            error_messages={'required':'密码不能为空','max_length':'密码长度不能大于12位','min_length':'密码长度不能小于6位'},
+            widget=widgets.PasswordInput(attrs={'class':'c3','placeholder':u'密码'})
+        )
+        email = fields.EmailField(
+            widget=widgets.TextInput(attrs={'class': 'c4', 'placeholder': u'email'}),
+            error_messages={'required':'email不能为空','invalid':'email格式错误'}
+        )
+        phonenumber = fields.CharField(
+            max_length=12,
+            widget=widgets.TextInput(attrs={'class': 'c5', 'placeholder': u'手机号'}),
+            validators = [RegexValidator(r'^[0-9]+$','请输入数字'),RegexValidator(r'^139[0-9]+$','数字必须以139开头')]
+         )
+        phonenumber_1 = fields.CharField(
+            max_length=12,
+            widget=widgets.TextInput(attrs={'class': 'c5', 'placeholder': u'手机号1'}),
+            validators=[mobile_validate, ],
+        )
+        phonenumber_2 = fields.CharField(
+            max_length=12,
+            widget=widgets.TextInput(attrs={'class': 'c6', 'placeholder': u'手机号2'}),
+            validators=[RegexValidator(r'^[0-9]+$', 'Enter a valid extension.', 'invalid')],
+        )
+    def Form_base_Django(request):
+        if request.method == 'GET':
+            obj = FM()
+            return render(request,'Form_base_Django.html',{'obj':obj})
+        elif request.method == 'POST':
+            obj = FM(request.POST)
+            b = obj.is_valid()
+            user_errors = obj.clean_username()
+            if b:
+                print(obj.cleaned_data)
+                #models.UserInfo.objects.create(**obj.cleaned_data)
+            else:
+                print(obj.errors.as_json())
+                print(user_errors)
+                #print(obj.errors["user"])
+            return render(request,'Form_base_Django.html',{'obj':obj,'user_errors':user_errors})
+        return render(request,'Form_base_Django.html')
+
+    在html中
+        {{ obj.user }} 帮你生成<input type="text" name="user"/> 如果有限制 高级浏览器同时也会自动生成并帮你验证 低级浏览器没有该功能
+        {{ obj.errors.user.0 }} 显示name="user" 的input表单中的错误信息
+
+        <table>{{obj.as_table}}</table>
+        {{obj.as_p}}
+        {{obj.as_ul}}
+        这会帮你生成一个(比如obj对面里面有user pwd email)  这种方法可自定方面比较差
+            user:一个<input>框
+            pwd:一个<input>框
+            email:一个<input>框
+
+12、ModelForm  (Model + Form => 验证 + 数据库操作) (建议小程序使用)
+    ModelForm -> BaseForm
+    Form -> BaseForm
+
+    from diango.forms import widgets as Plug_in_unit
+    from diango.forms import field as Field
+    class UserInfoModelForm(forms.ModelForm):
+
+        is_turn = Field.Charfield(
+            widget = Plug_in_unit.CheckboxInput()
+        )
+
+        对比Form的用法(生成HTML标签)
+        class Meta:
+            model = models.UserInfo
+            fields = '__all__'   #展示UserInfo表中的所有列
+            fields = ['列名','列名']    #展示UserInfo表中的第几列
+            exclude = ['列名']   #排除UserInfo表中的第几列
+            labels ={
+                'user':'用户名',
+                'email':'邮箱',
+            }
+            帮助信息
+            help_texts = {
+                'user' = '.....'
+            }
+            添加组件 html标签
+            widgets = {
+                'user':Plug_in_unit.Textarea(atts={'class':'c1'})
+            }
+            error_messages = {
+                '__all__'={
+
+            }
+              'email' : {'required':'邮箱不能为空','invalid':'邮箱格式错误'}
+            }
+            修改email属性为URL属性
+            field_classes = {
+                'email': Fields.URLField
+            }
+        验证方法 在源码里面的（is_valid点进去）
+        self._clean_fields()
+        self._clean_form()
+        self._post_clean()
+
+        def clean_field(self):
+            self.cleaned_data['field']
+            .................
+            return .....................
+
+    def index(request):
+        if request.method == 'GET':
+             obj = UserInfoModelForm()
+             return .............
+        elif request.method == 'POST':
+             obj = UserInfoMdelForm()
+             if obj.is_valid():
+                 obj.save()  #自动保存在数据库里
+              return .............
+    def edit(request,nid):
+        if request.method == 'GET':
+            user_obj = model.UserInfo.objects.filter(id=nid).first()
+            obj = UserInfoMdelForm(instance=user.obj)
+            return .....................
+        elif request.method == 'POST':
+            user_obj = model.UserInfo.objects.filter(id=nid).first()
+            obj = UserInfoMdelForm(instance=user.obj)
+            if obj.is_valid();
+                obj.save()
+            else:
+                print()
+            return ...........................
+    views下操作和Form基本一样 区别是实例化对面用的是UserInfoForm()
+    注：obj.save()
+        #或者
+        instance = obj.save(False)
+        instance.save()
+        obj,save_m2m()
+
+12、中间件
+    a.
+        在Setting.py
+        对所有的请求统一操作，黑名单过滤 获取用户IP
+        -process_request
+        -process_view
+        -process_response
+        -process_exception
+        -process_render_template
+    b.
+        -权限认证
+        -用户登陆验证
+        -Django的csrf 如何实现
+13、缓存
+    5种配置
+    3种应用：全局 视图函数 模板
+
+     使用中间件，经过一系列的认证等操作，如果内容在缓存中存在，则使用FetchFromCacheMiddleware获取内容并返回给用户，当返回给用户之前，判断缓存中是否已经存在，如果不存在则UpdateCacheMiddleware会将缓存保存至缓存，从而实现全站缓存
+
+    MIDDLEWARE = [
+        'django.middleware.cache.UpdateCacheMiddleware',
+        # 其他中间件...
+        'django.middleware.cache.FetchFromCacheMiddleware',
+    ]
+
+    CACHE_MIDDLEWARE_ALIAS = ""
+    CACHE_MIDDLEWARE_SECONDS = ""
+    CACHE_MIDDLEWARE_KEY_PREFIX = ""
+
+14、信号
+    适用场景，比如当用户订单支付成功之后，通常需要做以下事情
+        发送邮件通知用户支付成功
+        通知聊天程序（阿里旺旺）
+        通知卖家备货
+        开始追踪物流信息
+        其他可能的行为…
+    一原生信号
+    Django内置信号
+        Model signals
+            pre_init                    # django的modal执行其构造方法前，自动触发
+            post_init                   # django的modal执行其构造方法后，自动触发
+            pre_save                    # django的modal对象保存前，自动触发
+            post_save                   # django的modal对象保存后，自动触发
+            pre_delete                  # django的modal对象删除前，自动触发
+            post_delete                 # django的modal对象删除后，自动触发
+            m2m_changed                 # django的modal中使用m2m字段操作第三张表（add,remove,clear）前后，自动触发
+            class_prepared              # 程序启动时，检测已注册的app中modal类，对于每一个类，自动触发
+        Management signals
+            pre_migrate                 # 执行migrate命令前，自动触发
+            post_migrate                # 执行migrate命令后，自动触发
+        Request/response signals
+            request_started             # 请求到来前，自动触发
+            request_finished            # 请求结束后，自动触发
+            got_request_exception       # 请求异常后，自动触发
+        Test signals
+            setting_changed             # 使用test测试修改配置文件时，自动触发
+            template_rendered           # 使用test测试渲染模板时，自动触发
+        Database Wrappers
+            connection_created          # 创建数据库连接时，自动触发
+
+    对于Django内置的信号，仅需注册指定信号，当程序执行相应操作时，自动触发注册函数
+        from django.core.signals import request_finished
+        from django.core.signals import request_started
+        from django.core.signals import got_request_exception
+
+        from django.db.models.signals import class_prepared
+        from django.db.models.signals import pre_init, post_init
+        from django.db.models.signals import pre_save, post_save
+        from django.db.models.signals import pre_delete, post_delete
+        from django.db.models.signals import m2m_changed
+        from django.db.models.signals import pre_migrate, post_migrate
+
+        from django.test.signals import setting_changed
+        from django.test.signals import template_rendered
+
+        from django.db.backends.signals import connection_created
+
+        def callback(sender, **kwargs):
+            print("xxoo_callback")
+            print(sender,kwargs)
+
+        xxoo.connect(callback)
+
+        也可以用装饰器来注册一个信号
+        # Create your models here.
+        class User(models.Model):..........................
+            @receiver(post_save,sender=User)
+            def handler(sender,**kwargs):
+                print('%s模型增加了一个对象！！！'%sender)
+        信号函数还可以传入两个参数。instance和created
+             instance:表示这个模型的一个实例对象，即哪一个实例对象被创建或者执行了save()方法。
+             created:表示这个实例对象是否被创建，如果有created，表示这个实例对象被创建，如果没有created的话，表示这个实例对象是执行了save()方法才触发了这个函数。
+
+    二、自定义信号(和Django原生信号的操作一样)
+    a. 定义信号
+        import django.dispatch
+        pizza_done = django.dispatch.Signal(providing_args=["toppings", "size"]#所提供得参数)
+        pizza_done是信号名
+    b. 注册信号
+        def callback(sender, **kwargs):
+            print("callback")
+            print(sender,kwargs)
+
+        pizza_done.connect(callback)
+    c. 触发信号
+        from 路径 import pizza_done
+        pizza_done.send(sender='seven',toppings=123, size=456) sender表示谁发送的 后面俩是参数
+
+15、setting.py配置
+    一、项目路径
+        BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    二、项目的url配置
+        ROOT_URLCONF
+    三、数据库的配置  默认是使用sqllite3  如果想设置其他类型的数据库请看ORM
+        DATABASES
+        #看不懂英文就百度  这里解释一下ENGINE这个字段，在官网上他说是要使用的数据库后端，内置的数据库后端
+        DATABASES = {
+             'default': {
+                 'ENGINE': 'django.db.backends.postgresql',  'django.db.backends.mysql'  ，'django.db.backends.sqlite3'  ，'django.db.backends.oracle'
+                 'NAME': ' ',
+                 'USER': ' '
+                 'PASSWORD': ' ',
+                 'HOST': ' ',
+                 'PORT': ' ',
+             }
+        }
+    四、静态文件和静态模板
+    STATIC_URL = '/static/'
+    #静态目录配置
+    STATICFILES_DIRS = (
+        os.path.join(BASE_DIR, "static/"),
+    )      staticfiles_dirs
+    静态模板
+    TEMPLATES = [
+        {
+            'BACKEND': 'django.template.backends.django.DjangoTemplates',
+            'DIRS': [os.path.join(BASE_DIR, 'html123')]
+        ...................................
+    五、注册APP  不注册APP无法运行
+    INSTALLED_APPS = [
+        'django.contrib.admin', #管理站点。
+        'django.contrib.auth',  #认证系统
+        'django.contrib.contenttypes', # 内容类型的框架
+        'django.contrib.sessions',#会话框架
+        'django.contrib.messages',#消息传递框架。
+        'django.contrib.staticfiles',#用于管理静态文件的框架。
+        '写上你新创建的APP'
+    ]
+    六、中间件
+    有例子
+    MIDDLEWARE = [
+        'django.middleware.security.SecurityMiddleware',
+        'django.contrib.sessions.middleware.SessionMiddleware',
+        'django.middleware.common.CommonMiddleware',
+        #'django.middleware.csrf.CsrfViewMiddleware',
+        'django.contrib.auth.middleware.AuthenticationMiddleware',
+        'django.contrib.messages.middleware.MessageMiddleware',
+        'django.middleware.clickjacking.XFrameOptionsMiddleware',
+        #自定义的中间件
+        #'middleware.m1.Row1',
+        # 'middleware.m1.Row2',
+        # 'middleware.m1.Row3',
+    ]
+    七、缓存设置  /c/cache
+    #缓存设置    （这里只是文件类型的缓存 文件名cache）
+    CACHES = {
+        'default': {
+            'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',
+            'LOCATION': os.path.join(BASE_DIR,'cache')
+        }
+    }
+
+16、图片验证
+逻辑：1、创建一个图片给用户  session存在验证码
+
+utils文件
+创建一张图片  Pillow模块
+->在图片中写入随机字符串->创建对象->将图片写入到指定的文件夹->打开指定文件夹，读取内容->HttpRespone
+
+17、组件contenttype
+    from django.contrib.contenttypes.models import ContentType
+    from django.contrib.contenttypes.fields import GenericForeginKey,GenericRelation
+    models.py
+        class Course(models.Model):
+            #普通
+            title = models.CharField(max_length=32)
+            #仅用与反向查找
+            price_policy_List = GenericRelation('PricePolicy')
+
+        class DegreeCourse(models.Model):
+            #学位
+            title = models.CharField(max_length=32)
+
+        class PricePolicy(models.Model):
+            #价格策略
+            price = mdoels.IntegerField()
+            period = models.IntegerField()
+
+            content_type = mdoels.Foreignkey(contentType,verbose_name='关联表的名称')
+            object_id = models.IntegerField(verbose_name='关联表中的数据行ID')
+            #帮助你快速实现content_type操作
+            content_type = GenericForeginkey('content_type','object_id')
+
+view.py
+1、为学位课python添加一个价格策略（本）
+obj = DegreeCourse.object.filter(titile='python').first()
+#obj.id
+cobj = ContentType.object.filter(model='courser'),first()  #ContentType表是用contentType
+#cobj.id
+PricePolicy.object.create(price='9.9',period='30',content_type=cobj,object_id=obj)
+
+2、contenttype的做法
+obj = DegreeCourse.object.filter(title='python').first()
+PricePolicy.object.create(price='9.9',period='30',content_object=obj)
+
+3、根据ID获取课程，并获取该课程的所有价格策略
+course = models.Course.object.filter(id=1).first()
+
+price_policys = course.price_policy_list.all()
+print(pirce_policys)
